@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>메이플 쌀먹 가계부 - 쌀먹정리</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link rel="stylesheet" href="styles/animations.css">
+    <style>
+        body {
+            background: #f5f5f5;
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #F0FFF0 0%, #FFF8DC 100%);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        
+        /* 상단 차트 섹션 */
+        .chart-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        /* 기간 선택 탭 */
+        .period-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        
+        .period-tab {
+            padding: 10px 25px;
+            background: #f8f9fa;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #333;
+        }
+        
+        .period-tab.active {
+            background: #4169E1;
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(65, 105, 225, 0.3);
+        }
+        
+        /* 차트 그리드 */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 300px 300px 1fr;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .pie-chart-container {
+            width: 280px;
+            height: 280px;
+            margin: 0 auto;
+        }
+        
+        .bar-charts-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 280px;
+        }
+        
+        .bar-chart-wrapper {
+            flex: 1;
+            position: relative;
+        }
+        
+        /* 하단 그리드 */
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        /* 캘린더 섹션 */
+        .calendar-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+        
+        .calendar-header {
+            text-align: center;
+            font-weight: bold;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .calendar-day {
+            aspect-ratio: 1;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+        
+        .calendar-day:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .calendar-day.has-data {
+            background: #e8f5e9;
+            border: 1px solid #c8e6c9;
+        }
+        
+        .calendar-day .date {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .calendar-day .income {
+            color: #228B22;
+            font-size: 0.75em;
+            font-weight: bold;
+        }
+        
+        .calendar-day .expense {
+            color: #DC143C;
+            font-size: 0.75em;
+            font-weight: bold;
+        }
+        
+        /* 상세 기록 섹션 */
+        .records-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .records-list {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        
+        /* 스크롤바 스타일 */
+        .records-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .records-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        .records-list::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        
+        .records-list::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        .month-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .month-navigation button {
+            background: #4169E1;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .month-navigation button:hover {
+            background: #3151b1;
+            transform: translateY(-2px);
+        }
+        
+        .day-record {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .day-record:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .record-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .record-item:last-child {
+            border-bottom: none;
+        }
+        
+        /* 반응형 */
+        @media (max-width: 1200px) {
+            .charts-grid {
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto;
+            }
+            
+            .bar-charts-container {
+                grid-column: span 2;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .bottom-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🍄 메이플 쌀먹 가계부 - 쌀먹정리 🍄</h1>
+        <div class="nav-menu">
+            <a href="index.html" class="nav-link">홈</a>
+            <a href="records.html" class="nav-link active">쌀먹정리</a>
+        </div>
+    </div>
+    
+    <div class="main-container">
+        <!-- 상단 차트 섹션 -->
+        <div class="chart-section">
+            <h2>📊 수익/지출 분석</h2>
+            
+            <!-- 기간 선택 탭 -->
+            <div class="period-tabs">
+                <button class="period-tab active" data-period="weekly">주간</button>
+                <button class="period-tab" data-period="monthly">월간</button>
+                <button class="period-tab" data-period="yearly">연간</button>
+            </div>
+            
+            <!-- 차트 그리드 -->
+            <div class="charts-grid">
+                <!-- 수익 원형 차트 -->
+                <div class="pie-chart-container">
+                    <canvas id="incomePieChart"></canvas>
+                </div>
+                
+                <!-- 지출 원형 차트 -->
+                <div class="pie-chart-container">
+                    <canvas id="expensePieChart"></canvas>
+                </div>
+                
+                <!-- 카테고리별 막대 그래프 -->
+                <div class="bar-charts-container">
+                    <div class="bar-chart-wrapper">
+                        <canvas id="incomeBarChart"></canvas>
+                    </div>
+                    <div class="bar-chart-wrapper">
+                        <canvas id="expenseBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 하단 그리드 -->
+        <div class="bottom-grid">
+            <!-- 캘린더 섹션 -->
+            <div class="calendar-section">
+                <h2>📅 캘린더</h2>
+                
+                <div class="month-navigation">
+                    <button onclick="changeMonth(-1)">◀ 이전</button>
+                    <h3 id="currentMonth"></h3>
+                    <button onclick="changeMonth(1)">다음 ▶</button>
+                </div>
+                
+                <div class="calendar" id="calendar">
+                    <!-- 캘린더가 여기 생성됨 -->
+                </div>
+            </div>
+            
+            <!-- 상세 기록 섹션 -->
+            <div class="records-section">
+                <h2>📋 상세 기록</h2>
+                <div class="records-list" id="recordsList">
+                    <!-- 기록 목록이 여기 표시됨 -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 전역 변수
+        let data = { records: [], goals: [], settings: {} };
+        let currentMonth = new Date();
+        let currentPeriod = 'weekly';
+        let charts = {};
+        
+        // 초기화
+        function init() {
+            loadData();
+            // Chart.js 로드 확인 후 차트 초기화
+            if (typeof Chart !== 'undefined') {
+                initializeCharts();
+                updateAllCharts();
+            } else {
+                console.error('Chart.js가 로드되지 않았습니다.');
+            }
+            updateCalendar();
+            updateRecordsList();
+            
+            // 기간 탭 이벤트
+            document.querySelectorAll('.period-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    currentPeriod = this.getAttribute('data-period');
+                    document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    updateAllCharts();
+                });
+            });
+        }
+        
+        // 데이터 로드
+        function loadData() {
+            const savedData = sessionStorage.getItem('mapleSsalMeokData');
+            if (savedData) {
+                data = JSON.parse(savedData);
+            } else {
+                const localData = localStorage.getItem('mapleSsalMeokData');
+                if (localData) {
+                    const parsed = JSON.parse(localData);
+                    data = {
+                        records: parsed.records || [],
+                        goals: parsed.goals || [],
+                        settings: parsed.settings || {}
+                    };
+                }
+            }
+        }
+        
+        // 차트 초기화
+        function initializeCharts() {
+            // 수익 원형 차트
+            const incomeCtx = document.getElementById('incomePieChart').getContext('2d');
+            charts.incomePie = new Chart(incomeCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#228B22', '#32CD32', '#90EE90', '#98FB98', '#00FA9A'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: '수익 분포',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        animateScale: false
+                    }
+                }
+            });
+            
+            // 지출 원형 차트
+            const expenseCtx = document.getElementById('expensePieChart').getContext('2d');
+            charts.expensePie = new Chart(expenseCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#DC143C', '#FF6347', '#FF7F50', '#FFA07A', '#F08080'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: '지출 분포',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        animateScale: false
+                    }
+                }
+            });
+            
+            // 수익 막대 차트
+            const incomeBarCtx = document.getElementById('incomeBarChart').getContext('2d');
+            charts.incomeBar = new Chart(incomeBarCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '수익',
+                        data: [],
+                        backgroundColor: '#228B22',
+                        borderColor: '#1a6b1a',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatMeso(value);
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 750,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+            
+            // 지출 막대 차트
+            const expenseBarCtx = document.getElementById('expenseBarChart').getContext('2d');
+            charts.expenseBar = new Chart(expenseBarCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '지출',
+                        data: [],
+                        backgroundColor: '#DC143C',
+                        borderColor: '#b91c3c',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatMeso(value);
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 750,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+        }
+        
+        // 모든 차트 업데이트
+        function updateAllCharts() {
+            const filteredRecords = filterRecordsByPeriod(data.records, currentPeriod);
+            
+            // 수익 데이터 집계
+            const incomeData = {};
+            const expenseData = {};
+            
+            filteredRecords.forEach(record => {
+                if (record.type === 'income') {
+                    incomeData[record.category] = (incomeData[record.category] || 0) + record.amount;
+                } else {
+                    expenseData[record.category] = (expenseData[record.category] || 0) + record.amount;
+                }
+            });
+            
+            // 원형 차트 업데이트
+            updatePieChart(charts.incomePie, incomeData);
+            updatePieChart(charts.expensePie, expenseData);
+            
+            // 막대 차트 업데이트
+            updateBarChart(charts.incomeBar, incomeData);
+            updateBarChart(charts.expenseBar, expenseData);
+        }
+        
+        // 원형 차트 업데이트
+        function updatePieChart(chart, data) {
+            const labels = Object.keys(data);
+            const values = Object.values(data);
+            
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = values;
+            chart.update('active');
+        }
+        
+        // 막대 차트 업데이트
+        function updateBarChart(chart, data) {
+            const sorted = Object.entries(data).sort((a, b) => b[1] - a[1]);
+            const labels = sorted.map(item => item[0]);
+            const values = sorted.map(item => item[1]);
+            
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = values;
+            chart.update('active');
+        }
+        
+        // 기간별 레코드 필터링
+        function filterRecordsByPeriod(records, period) {
+            const now = new Date();
+            const startDate = new Date();
+            
+            switch(period) {
+                case 'weekly':
+                    startDate.setDate(now.getDate() - 7);
+                    break;
+                case 'monthly':
+                    startDate.setMonth(now.getMonth() - 1);
+                    break;
+                case 'yearly':
+                    startDate.setFullYear(now.getFullYear() - 1);
+                    break;
+            }
+            
+            return records.filter(record => new Date(record.date) >= startDate);
+        }
+        
+        // 캘린더 업데이트
+        function updateCalendar() {
+            const year = currentMonth.getFullYear();
+            const month = currentMonth.getMonth();
+            
+            document.getElementById('currentMonth').textContent = 
+                `${year}년 ${month + 1}월`;
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            const calendar = document.getElementById('calendar');
+            calendar.innerHTML = '';
+            
+            // 요일 헤더
+            const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+            dayNames.forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'calendar-header';
+                header.textContent = day;
+                calendar.appendChild(header);
+            });
+            
+            // 빈 칸 채우기
+            for (let i = 0; i < firstDay; i++) {
+                calendar.appendChild(document.createElement('div'));
+            }
+            
+            // 날짜별 데이터 집계
+            const dailyData = {};
+            data.records.forEach(record => {
+                const date = new Date(record.date);
+                if (date.getFullYear() === year && date.getMonth() === month) {
+                    const day = date.getDate();
+                    if (!dailyData[day]) {
+                        dailyData[day] = { income: 0, expense: 0 };
+                    }
+                    if (record.type === 'income') {
+                        dailyData[day].income += record.amount;
+                    } else {
+                        dailyData[day].expense += record.amount;
+                    }
+                }
+            });
+            
+            // 날짜 생성
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'calendar-day';
+                
+                if (dailyData[day]) {
+                    dayDiv.classList.add('has-data');
+                    dayDiv.innerHTML = `
+                        <div class="date">${day}</div>
+                        ${dailyData[day].income > 0 ? `<div class="income">+${formatShortMeso(dailyData[day].income)}</div>` : ''}
+                        ${dailyData[day].expense > 0 ? `<div class="expense">-${formatShortMeso(dailyData[day].expense)}</div>` : ''}
+                    `;
+                } else {
+                    dayDiv.innerHTML = `<div class="date">${day}</div>`;
+                }
+                
+                dayDiv.onclick = () => showDayDetails(year, month, day);
+                calendar.appendChild(dayDiv);
+            }
+        }
+        
+        // 월 변경
+        function changeMonth(delta) {
+            currentMonth.setMonth(currentMonth.getMonth() + delta);
+            updateCalendar();
+            updateRecordsList();
+        }
+        
+        // 날짜 상세 보기
+        function showDayDetails(year, month, day) {
+            const date = new Date(year, month, day);
+            const dayRecords = data.records.filter(record => {
+                const recordDate = new Date(record.date);
+                return recordDate.getFullYear() === year &&
+                       recordDate.getMonth() === month &&
+                       recordDate.getDate() === day;
+            });
+            
+            if (dayRecords.length === 0) return;
+            
+            // 해당 날짜로 스크롤
+            const dateStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+            const element = document.getElementById(`day-${dateStr}`);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                element.style.background = '#fffacd';
+                setTimeout(() => {
+                    element.style.background = '';
+                }, 2000);
+            }
+        }
+        
+        // 기록 목록 업데이트
+        function updateRecordsList() {
+            const recordsList = document.getElementById('recordsList');
+            const year = currentMonth.getFullYear();
+            const month = currentMonth.getMonth();
+            
+            // 현재 월의 기록만 필터링
+            const monthlyRecords = data.records.filter(record => {
+                const date = new Date(record.date);
+                return date.getFullYear() === year && date.getMonth() === month;
+            });
+            
+            if (monthlyRecords.length === 0) {
+                recordsList.innerHTML = '<p style="text-align: center; color: #999;">이 달에는 등록된 기록이 없습니다.</p>';
+                return;
+            }
+            
+            // 날짜별로 그룹화
+            const groupedRecords = {};
+            monthlyRecords.forEach(record => {
+                const date = new Date(record.date);
+                const dateKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+                
+                if (!groupedRecords[dateKey]) {
+                    groupedRecords[dateKey] = [];
+                }
+                groupedRecords[dateKey].push(record);
+            });
+            
+            // HTML 생성
+            let html = '';
+            Object.keys(groupedRecords).sort().reverse().forEach(dateKey => {
+                const dayRecords = groupedRecords[dateKey];
+                const dayIncome = dayRecords.filter(r => r.type === 'income').reduce((sum, r) => sum + r.amount, 0);
+                const dayExpense = dayRecords.filter(r => r.type === 'expense').reduce((sum, r) => sum + r.amount, 0);
+                
+                html += `
+                    <div id="day-${dateKey}" class="day-record">
+                        <h4>${dateKey}</h4>
+                        <div style="margin-bottom: 10px; color: #666;">
+                            수익: <span style="color: #228B22;">${formatMeso(dayIncome)}</span> | 
+                            지출: <span style="color: #DC143C;">${formatMeso(dayExpense)}</span> | 
+                            순이익: <span style="color: #FF8C00;">${formatMeso(dayIncome - dayExpense)}</span>
+                        </div>
+                        ${dayRecords.sort((a, b) => new Date(b.date) - new Date(a.date)).map(record => {
+                            const time = new Date(record.date);
+                            const timeStr = `${time.getHours()}:${time.getMinutes().toString().padStart(2, '0')}`;
+                            const color = record.type === 'income' ? '#228B22' : '#DC143C';
+                            const prefix = record.type === 'income' ? '+' : '-';
+                            
+                            return `
+                                <div class="record-item">
+                                    <div>
+                                        <span style="color: #666;">${timeStr}</span>
+                                        <span style="margin-left: 10px;">${record.category}</span>
+                                        ${record.memo ? `<span style="color: #999; margin-left: 10px;">${record.memo}</span>` : ''}
+                                    </div>
+                                    <span style="color: ${color}; font-weight: bold;">${prefix}${formatMeso(record.amount)}</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            });
+            
+            recordsList.innerHTML = html;
+        }
+        
+        // 금액 포맷 (전체)
+        function formatMeso(value) {
+            if (value >= 100000000) {
+                const billions = value / 100000000;
+                return billions % 1 === 0 ? `${billions}억` : `${billions.toFixed(1)}억`;
+            } else if (value >= 10000) {
+                const tenThousands = Math.floor(value / 10000);
+                return `${tenThousands.toLocaleString()}만`;
+            }
+            return value.toLocaleString();
+        }
+        
+        // 금액 포맷 (짧은 버전)
+        function formatShortMeso(value) {
+            if (value >= 100000000) {
+                return `${(value / 100000000).toFixed(1)}억`;
+            } else if (value >= 10000000) {
+                return `${Math.floor(value / 10000000)}천만`;
+            } else if (value >= 10000) {
+                return `${Math.floor(value / 10000)}만`;
+            }
+            return value.toLocaleString();
+        }
+        
+        // 페이지 로드 시 초기화
+        window.onload = init;
+    </script>
+    
+    <!-- 추가 스크립트 -->
+    <script src="src/features/animations.js"></script>
+    <script src="src/features/csv-export.js"></script>
+    <script src="src/ui/notifications.js"></script>
+    
+    <script>
+        // 애니메이션 초기화
+        window.addEventListener('DOMContentLoaded', function() {
+            if (window.initAnimations) {
+                window.initAnimations();
+            }
+        });
+    </script>
+</body>
+</html>

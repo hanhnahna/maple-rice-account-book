@@ -1,0 +1,232 @@
+/* ==========================================================================
+   메이플 쌀먹 가계부 - 테마 스타일시트
+   다크모드 관련 스타일, 색상 테마 변수, 테마별 변형 스타일
+   ========================================================================== */
+
+/* ==========================================================================
+   DARK MODE VARIABLES
+   ========================================================================== */
+
+body.dark-mode {
+    --bg-color: #1a1a1a;
+    --container-bg: #2a2a2a;
+    --text-color: #e0e0e0;
+    --border-color: #444;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --header-bg: linear-gradient(135deg, #1a3a1a 0%, #3a3a2a 100%);
+    --card-hover: #333;
+    --tooltip-bg: #fff;
+    --tooltip-text: #333;
+}
+
+/* ==========================================================================
+   DARK MODE TOGGLE COMPONENT
+   ========================================================================== */
+
+.dark-mode-toggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: none;
+    border: 2px solid #666;
+    border-radius: 20px;
+    padding: 5px 15px;
+    cursor: pointer;
+    font-size: 1.2em;
+    transition: all 0.3s ease;
+}
+
+.dark-mode-toggle:hover {
+    background: #666;
+    color: white;
+}
+
+/* ==========================================================================
+   DARK MODE TAB STYLES
+   ========================================================================== */
+
+body.dark-mode .tab {
+    background: #3a3a3a;
+    color: #e0e0e0;
+}
+
+body.dark-mode .chart-tab {
+    background: #3a3a3a;
+    color: #e0e0e0;
+}
+
+/* ==========================================================================
+   DARK MODE INPUT STYLES
+   ========================================================================== */
+
+body.dark-mode .current-meso-input {
+    background: #1a2a3a;
+}
+
+/* ==========================================================================
+   DARK MODE TAG STYLES
+   ========================================================================== */
+
+body.dark-mode .tag {
+    background: #4a4a4a;
+    color: #ccc;
+}
+
+/* ==========================================================================
+   DARK MODE SECTION BACKGROUNDS
+   ========================================================================== */
+
+body.dark-mode .goals-section {
+    background: #1a2a1a;
+}
+
+body.dark-mode .prediction-section {
+    background: linear-gradient(135deg, #1a2a3a 0%, #2a1a3a 100%);
+}
+
+body.dark-mode .spend-limit-section {
+    background: #3a3a2a;
+}
+
+body.dark-mode .pattern-analysis-section {
+    background: linear-gradient(135deg, #2a1a2a 0%, #1a2a3a 100%);
+}
+
+body.dark-mode .equipment-section {
+    background: #2a2a1a;
+}
+
+/* ==========================================================================
+   DARK MODE GOAL PROGRESS
+   ========================================================================== */
+
+body.dark-mode .goal-progress {
+    background: #4a4a4a;
+}
+
+body.dark-mode .goal-item.achieved {
+    background: #1B5E20;
+}
+
+/* ==========================================================================
+   DARK MODE POPUP NOTIFICATIONS
+   ========================================================================== */
+
+body.dark-mode .popup-notification.warning {
+    background: #4a1a1a;
+}
+
+/* ==========================================================================
+   THEME COLOR UTILITIES
+   ========================================================================== */
+
+/* Success Colors */
+.text-success { color: #228B22; }
+.bg-success { background-color: #228B22; }
+.border-success { border-color: #228B22; }
+
+/* Error Colors */
+.text-error { color: #DC143C; }
+.bg-error { background-color: #DC143C; }
+.border-error { border-color: #DC143C; }
+
+/* Warning Colors */
+.text-warning { color: #FF8C00; }
+.bg-warning { background-color: #FF8C00; }
+.border-warning { border-color: #FF8C00; }
+
+/* Info Colors */
+.text-info { color: #4169E1; }
+.bg-info { background-color: #4169E1; }
+.border-info { border-color: #4169E1; }
+
+/* Gold Colors (for equipment) */
+.text-gold { color: #D4AF37; }
+.bg-gold { background-color: #D4AF37; }
+.border-gold { border-color: #D4AF37; }
+
+/* Purple Colors (for pattern analysis) */
+.text-purple { color: #9370DB; }
+.bg-purple { background-color: #9370DB; }
+.border-purple { border-color: #9370DB; }
+
+/* ==========================================================================
+   DARK MODE COLOR OVERRIDES
+   ========================================================================== */
+
+body.dark-mode .text-success { color: #32CD32; }
+body.dark-mode .text-error { color: #FF6B6B; }
+body.dark-mode .text-warning { color: #FFB347; }
+body.dark-mode .text-info { color: #87CEEB; }
+body.dark-mode .text-gold { color: #F0E68C; }
+body.dark-mode .text-purple { color: #DA70D6; }
+
+/* ==========================================================================
+   THEME TRANSITIONS
+   ========================================================================== */
+
+/* Smooth transitions for theme switching */
+body, .container, .card, .summary-item, .goal-item, .prediction-item,
+.pattern-item, .recovery-item, .setting-item, .equipment-item,
+.tab, .chart-tab, .tag, .tooltip .tooltiptext, .modal-content,
+.popup-notification, input, select, textarea, button {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* ==========================================================================
+   HIGH CONTRAST MODE SUPPORT
+   ========================================================================== */
+
+@media (prefers-contrast: high) {
+    :root {
+        --border-color: #000;
+        --shadow-color: rgba(0, 0, 0, 0.5);
+    }
+    
+    body.dark-mode {
+        --border-color: #fff;
+        --text-color: #fff;
+    }
+    
+    .card, .summary-item, .goal-item {
+        border-width: 2px;
+    }
+}
+
+/* ==========================================================================
+   REDUCED MOTION SUPPORT
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ==========================================================================
+   PRINT STYLES
+   ========================================================================== */
+
+@media print {
+    body {
+        background: white !important;
+        color: black !important;
+    }
+    
+    .dark-mode-toggle, .version-info, .offline-indicator {
+        display: none !important;
+    }
+    
+    .container {
+        box-shadow: none !important;
+        border: 1px solid #000 !important;
+    }
+    
+    .card {
+        break-inside: avoid;
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
+    }
+}

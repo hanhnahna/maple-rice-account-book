@@ -1,0 +1,22 @@
+# 테스트 파일
+test.html
+test-*.html
+
+# 개발용 파일
+SSAL.html
+feature-showcase.html
+simple.html
+main-complete.js
+main-simple.js
+
+# 백업 폴더
+backup/
+backup_*/
+
+# IDE 설정
+.vscode/
+.idea/
+
+# OS 파일
+Thumbs.db
+.DS_Store

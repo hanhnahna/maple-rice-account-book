@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>메이플 스토리 쌀먹 가계부</title>
+    <meta name="theme-color" content="#228B22">
+    
+    <!-- 외부 라이브러리 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    
+    <!-- CSS 파일들 -->
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link rel="stylesheet" href="styles/themes.css">
+    <link rel="stylesheet" href="styles/animations.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <div class="header">
+            <h1>🍄 메이플 스토리 쌀먹 가계부 🍄</h1>
+            <p class="subtitle">메소 팔아 쌀 사먹자</p>
+            <div id="riceBagInfo" style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                🌾 <span id="riceBagCount">0</span>포대
+            </div>
+            <button class="dark-mode-toggle">🌙</button>
+            
+            <!-- 네비게이션 메뉴 -->
+            <div class="nav-menu" style="margin-top: 20px;">
+                <a href="index.html" class="nav-link active">홈</a>
+                <a href="records.html" class="nav-link">쌀먹정리</a>
+            </div>
+        </div>
+
+        <!-- 전체 요약 -->
+        <div class="summary-section">
+            <h2 style="color: #228B22; margin-bottom: 20px;">📊 전체 요약</h2>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <div class="summary-label">현재 보유 메소</div>
+                    <div class="summary-value current-value" id="currentMeso" data-full="0">0억</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">총 수익</div>
+                    <div class="summary-value income-value" id="totalIncome" data-full="0">0억</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">총 지출</div>
+                    <div class="summary-value expense-value" id="totalExpense" data-full="0">0억</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">순이익</div>
+                    <div class="summary-value profit-value" id="netProfit" data-full="0">0억</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">일평균 수익</div>
+                    <div class="summary-value income-value" id="dailyAverage" data-full="0">0억</div>
+                </div>
+            </div>
+            <div id="quickAnalysis" style="margin-top: 15px; padding: 15px; background: var(--container-bg); border-radius: 8px;">
+                <!-- 간단한 분석 내용이 여기 표시됨 -->
+            </div>
+        </div>
+
+        <!-- 시간 탭 제거 - 차트 섹션으로 이동 -->
+
+        <!-- 메인 그리드 -->
+        <div class="main-grid">
+            <!-- 입력 및 기록 섹션 -->
+            <div class="card">
+                <h2 class="card-title">
+                    💰 수익/지출 입력
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">메소 수익과 지출을 입력하세요. 억 단위 입력 가능 (예: 1.5 = 1억 5천만)</span>
+                    </span>
+                </h2>
+
+                <!-- 현재 보유 메소 입력 -->
+                <div class="current-meso-input">
+                    <label>💎 현재 보유 메소:</label>
+                    <input type="text" id="currentMesoInput" placeholder="예: 100억">
+                    <button id="setCurrentMesoBtn" onclick="updateCurrentMeso()">설정</button>
+                </div>
+
+                <div class="input-section">
+                    <div class="input-labels">
+                        <div>유형</div>
+                        <div>카테고리</div>
+                        <div>금액</div>
+                        <div></div>
+                    </div>
+                    <div class="input-grid">
+                        <select id="type">
+                            <option value="income">수익</option>
+                            <option value="expense">지출</option>
+                        </select>
+                        <select id="category">
+                            <!-- 동적으로 변경됨 -->
+                        </select>
+                        <input type="text" id="amount" placeholder="예: 1.5 또는 150,000,000">
+                        <button class="add-button" id="addRecordBtn" onclick="addRecord()">추가</button>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <textarea id="memo" placeholder="메모 (선택사항) #태그 사용 가능" rows="2" style="width: 100%;"></textarea>
+                    </div>
+                </div>
+
+                <h3 class="card-title">📋 기록 관리</h3>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <table class="records-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 20%;">날짜/시간</th>
+                                <th style="width: 12%;">유형</th>
+                                <th style="width: 20%;">항목</th>
+                                <th style="width: 18%;">금액</th>
+                                <th style="width: 25%;">메모/태그</th>
+                                <th style="width: 5%;">삭제</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recordsTableBody">
+                            <!-- 동적으로 추가됨 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 목표 설정 섹션 -->
+            <div class="card">
+                <h2 class="card-title">
+                    🎯 목표 설정
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">최대 5개의 메소 목표를 설정할 수 있습니다</span>
+                    </span>
+                </h2>
+
+                <div class="goals-section">
+                    <div class="goal-input-labels">
+                        <div>목표 이름</div>
+                        <div>목표 금액</div>
+                        <div>메모</div>
+                        <div></div>
+                    </div>
+                    <div class="goal-input-group">
+                        <input type="text" id="goalName" placeholder="예: 22성 도전">
+                        <input type="text" id="goalAmount" placeholder="억 단위">
+                        <input type="text" id="goalMemo" placeholder="선택사항">
+                        <button id="addGoalBtn" onclick="addGoal()">추가</button>
+                    </div>
+
+                    <div id="goalsList">
+                        <!-- 목표 리스트가 여기 표시됨 -->
+                    </div>
+                </div>
+
+                <!-- 전체 목표 진행률 -->
+                <div style="background: #FFF8DC; padding: 20px; border-radius: 10px; margin-top: 20px;">
+                    <h4 style="color: #FF8C00; margin-bottom: 15px;">🏆 전체 목표 진행률</h4>
+                    <div class="goal-progress">
+                        <div class="goal-progress-bar" id="totalGoalProgress" style="width: 0%">0%</div>
+                    </div>
+                    <div id="totalGoalInfo" style="margin-top: 10px; text-align: center;">
+                        총 목표: 0억 / 달성: 0억
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 차트 섹션 -->
+        <div class="card chart-section">
+            <h2 class="card-title">
+                📈 수익/지출 차트
+                <span class="tooltip">ℹ️
+                    <span class="tooltiptext">기간별 수익/지출 추이를 확인하세요</span>
+                </span>
+            </h2>
+
+            <!-- 기간 선택 탭 -->
+            <div class="chart-period-tabs">
+                <div class="chart-period-tab active" data-view="daily">일간</div>
+                <div class="chart-period-tab" data-view="weekly">주간</div>
+                <div class="chart-period-tab" data-view="monthly">월간</div>
+                <div class="chart-period-tab" data-view="yearly">연간</div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="mainChart"></canvas>
+            </div>
+        </div>
+
+
+        <!-- 장비 가격 관리 -->
+        <div class="card">
+            <h2 class="card-title">
+                ⚔️ 장비 가격 관리
+                <span class="tooltip">ℹ️
+                    <span class="tooltiptext">보유 장비의 예상 판매 가격을 관리하세요</span>
+                </span>
+            </h2>
+
+            <!-- 장비 탭 -->
+            <div class="equipment-tabs">
+                <div class="equipment-tab active" data-tab="main">본캐</div>
+                <div class="equipment-tab" data-tab="union1">유니온 챔피언1</div>
+                <div class="equipment-tab" data-tab="union2">유니온 챔피언2</div>
+            </div>
+
+            <div class="equipment-section">
+                <!-- 본캐 장비 -->
+                <div class="equipment-tab-content active" data-tab-content="main">
+                    <!-- 무기 -->
+                <div class="equipment-category">
+                    <div class="equipment-category-title category-weapon">🗡️ 무기</div>
+                    <div class="equipment-grid">
+                        <div class="equipment-item">
+                            <span class="equipment-label">무기</span>
+                            <input type="text" class="equipment-input" id="equip-weapon" placeholder="예: 10억">
+                        </div>
+                        <div class="equipment-item">
+                            <span class="equipment-label">보조장비</span>
+                            <input type="text" class="equipment-input" id="equip-secondary" placeholder="예: 5억">
+                        </div>
+                        <div class="equipment-item">
+                            <span class="equipment-label">엠블렘</span>
+                            <input type="text" class="equipment-input" id="equip-emblem" placeholder="예: 3억">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 방어구 -->
+                <div class="equipment-category">
+                    <div class="equipment-category-title category-armor">🛡️ 방어구</div>
+                    <div class="equipment-grid">
+                        <div class="equipment-item">
+                            <span class="equipment-label">모자</span>
+                            <input type="text" class="equipment-input" id="equip-hat" placeholder="예: 8억">
+                        </div>
+                        <div class="equipment-item">
+                            <span class="equipment-label">상의</span>
+                            <input type="text" class="equipment-input" id="equip-top" placeholder="예: 10억">
+                        </div>
+                        <div class="equipment-item">
+                            <span class="equipment-label">하의</span>
+                            <input type="text" class="equipment-input" id="equip-bottom" placeholder="예: 10억">
+                        </div>
+                        <div class="equipment-item">
+                            <span class="equipment-label">신발</span>
+                            <input type="text" class="equipment-input" id="equip-shoes" placeholder="예: 7억">
+                        </div>
+                        <div class="equipment-item">
+                            <span class="equipment-label">장갑</span>
+                            <input type="text" class="equipment-input" id="equip-gloves" placeholder="예: 6억">
+                        </div>
+                        <div class="equipment-item">
+                            <span class="equipment-label">망토</span>
+                            <input type="text" class="equipment-input" id="equip-cape" placeholder="예: 5억">
+                        </div>
+                        <div class="equipment-item">
+                            <span class="equipment-label">한벌옷</span>
+                            <input type="text" class="equipment-input" id="equip-overall" placeholder="예: 15억">
+                        </div>
+                        <div class="equipment-item">
+                            <span class="equipment-label">방패</span>
+                            <input type="text" class="equipment-input" id="equip-shield" placeholder="예: 5억">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 장신구 -->
+                <div class="equipment-category">
+                    <div class="equipment-category-title category-accessory">💍 장신구</div>
+                    <div class="equipment-grid">
+                        <div class="equipment-item">
+                            <span class="equipment-label">얼굴장식</span>
+                            <input type="text" class="equipment-input" id="equip-face" placeholder="예: 4억">
+                        </div>
+                        <div class="equipment-item">
+                            <span class="equipment-label">눈장식</span>
+                            <input type="text" class="equipment-input" id="equip-eye" placeholder="예: 4억">
+                        </div>
+                        <div class="equipment-item">
+                            <span class="equipment-label">귀고리</span>
+                            <input type="text" class="equipment-input" id="equip-earring" placeholder="예: 6억">
+                        </div>
+                        <div class="equipment-item">
+                            <span class="equipment-label">반지1</span>
+                            <input type="text" class="equipment-input" id="equip-ring1" placeholder="예: 8억">
+                        </div>
+                        <div class="equipment-item">
+                            <span class="equipment-label">반지2</span>
+                            <input type="text" class="equipment-input" id="equip-ring2" placeholder="예: 8억">
+                        </div>
+                        <div class="equipment-item">
+                            <span class="equipment-label">반지3</span>
+                            <input type="text" class="equipment-input" id="equip-ring3" placeholder="예: 8억">
+                        </div>
+                        <div class="equipment-item">
+                            <span class="equipment-label">반지4</span>
+                            <input type="text" class="equipment-input" id="equip-ring4" placeholder="예: 8억">
+                        </div>
+                        <div class="equipment-item">
+                            <span class="equipment-label">펜던트1</span>
+                            <input type="text" class="equipment-input" id="equip-pendant1" placeholder="예: 10억">
+                        </div>
+                        <div class="equipment-item">
+                            <span class="equipment-label">펜던트2</span>
+                            <input type="text" class="equipment-input" id="equip-pendant2" placeholder="예: 10억">
+                        </div>
+                        <div class="equipment-item">
+                            <span class="equipment-label">벨트</span>
+                            <input type="text" class="equipment-input" id="equip-belt" placeholder="예: 7억">
+                        </div>
+                        <div class="equipment-item">
+                            <span class="equipment-label">어깨장식</span>
+                            <input type="text" class="equipment-input" id="equip-shoulder" placeholder="예: 5억">
+                        </div>
+                        <div class="equipment-item">
+                            <span class="equipment-label">훈장</span>
+                            <input type="text" class="equipment-input" id="equip-medal" placeholder="예: 3억">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 기타 -->
+                <div class="equipment-category">
+                    <div class="equipment-category-title category-other">🔧 기타</div>
+                    <div class="equipment-grid">
+                        <div class="equipment-item">
+                            <span class="equipment-label">메카닉 장비</span>
+                            <input type="text" class="equipment-input" id="equip-mechanic" placeholder="예: 5억">
+                        </div>
+                        <div class="equipment-item">
+                            <span class="equipment-label">드래곤장비</span>
+                            <input type="text" class="equipment-input" id="equip-dragon" placeholder="예: 10억">
+                        </div>
+                    </div>
+                </div>
+                </div>
+                
+                <!-- 유니온 챔피언1 장비 -->
+                <div class="equipment-tab-content" data-tab-content="union1">
+                    <!-- 무기 -->
+                    <div class="equipment-category">
+                        <div class="equipment-category-title category-weapon">🗡️ 무기</div>
+                        <div class="equipment-grid">
+                            <div class="equipment-item">
+                                <span class="equipment-label">무기</span>
+                                <input type="text" class="equipment-input" id="equip-union1-weapon" placeholder="예: 10억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">보조장비</span>
+                                <input type="text" class="equipment-input" id="equip-union1-secondary" placeholder="예: 5억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">엠블렘</span>
+                                <input type="text" class="equipment-input" id="equip-union1-emblem" placeholder="예: 3억">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 방어구 -->
+                    <div class="equipment-category">
+                        <div class="equipment-category-title category-armor">🛡️ 방어구</div>
+                        <div class="equipment-grid">
+                            <div class="equipment-item">
+                                <span class="equipment-label">모자</span>
+                                <input type="text" class="equipment-input" id="equip-union1-hat" placeholder="예: 8억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">상의</span>
+                                <input type="text" class="equipment-input" id="equip-union1-top" placeholder="예: 10억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">하의</span>
+                                <input type="text" class="equipment-input" id="equip-union1-bottom" placeholder="예: 10억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">신발</span>
+                                <input type="text" class="equipment-input" id="equip-union1-shoes" placeholder="예: 7억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">장갑</span>
+                                <input type="text" class="equipment-input" id="equip-union1-gloves" placeholder="예: 6억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">망토</span>
+                                <input type="text" class="equipment-input" id="equip-union1-cape" placeholder="예: 5억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">한벌옷</span>
+                                <input type="text" class="equipment-input" id="equip-union1-overall" placeholder="예: 15억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">방패</span>
+                                <input type="text" class="equipment-input" id="equip-union1-shield" placeholder="예: 5억">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 장신구 -->
+                    <div class="equipment-category">
+                        <div class="equipment-category-title category-accessory">💍 장신구</div>
+                        <div class="equipment-grid">
+                            <div class="equipment-item">
+                                <span class="equipment-label">얼굴장식</span>
+                                <input type="text" class="equipment-input" id="equip-union1-face" placeholder="예: 4억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">눈장식</span>
+                                <input type="text" class="equipment-input" id="equip-union1-eye" placeholder="예: 4억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">귀고리</span>
+                                <input type="text" class="equipment-input" id="equip-union1-earring" placeholder="예: 6억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">반지1</span>
+                                <input type="text" class="equipment-input" id="equip-union1-ring1" placeholder="예: 8억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">반지2</span>
+                                <input type="text" class="equipment-input" id="equip-union1-ring2" placeholder="예: 8억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">반지3</span>
+                                <input type="text" class="equipment-input" id="equip-union1-ring3" placeholder="예: 8억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">반지4</span>
+                                <input type="text" class="equipment-input" id="equip-union1-ring4" placeholder="예: 8억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">펜던트1</span>
+                                <input type="text" class="equipment-input" id="equip-union1-pendant1" placeholder="예: 10억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">펜던트2</span>
+                                <input type="text" class="equipment-input" id="equip-union1-pendant2" placeholder="예: 10억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">벨트</span>
+                                <input type="text" class="equipment-input" id="equip-union1-belt" placeholder="예: 7억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">어깨장식</span>
+                                <input type="text" class="equipment-input" id="equip-union1-shoulder" placeholder="예: 5억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">훈장</span>
+                                <input type="text" class="equipment-input" id="equip-union1-medal" placeholder="예: 3억">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 기타 -->
+                    <div class="equipment-category">
+                        <div class="equipment-category-title category-other">🔧 기타</div>
+                        <div class="equipment-grid">
+                            <div class="equipment-item">
+                                <span class="equipment-label">메카닉 장비</span>
+                                <input type="text" class="equipment-input" id="equip-union1-mechanic" placeholder="예: 5억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">드래곤장비</span>
+                                <input type="text" class="equipment-input" id="equip-union1-dragon" placeholder="예: 10억">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 유니온 챔피언2 장비 -->
+                <div class="equipment-tab-content" data-tab-content="union2">
+                    <!-- 무기 -->
+                    <div class="equipment-category">
+                        <div class="equipment-category-title category-weapon">🗡️ 무기</div>
+                        <div class="equipment-grid">
+                            <div class="equipment-item">
+                                <span class="equipment-label">무기</span>
+                                <input type="text" class="equipment-input" id="equip-union2-weapon" placeholder="예: 10억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">보조장비</span>
+                                <input type="text" class="equipment-input" id="equip-union2-secondary" placeholder="예: 5억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">엠블렘</span>
+                                <input type="text" class="equipment-input" id="equip-union2-emblem" placeholder="예: 3억">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 방어구 -->
+                    <div class="equipment-category">
+                        <div class="equipment-category-title category-armor">🛡️ 방어구</div>
+                        <div class="equipment-grid">
+                            <div class="equipment-item">
+                                <span class="equipment-label">모자</span>
+                                <input type="text" class="equipment-input" id="equip-union2-hat" placeholder="예: 8억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">상의</span>
+                                <input type="text" class="equipment-input" id="equip-union2-top" placeholder="예: 10억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">하의</span>
+                                <input type="text" class="equipment-input" id="equip-union2-bottom" placeholder="예: 10억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">신발</span>
+                                <input type="text" class="equipment-input" id="equip-union2-shoes" placeholder="예: 7억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">장갑</span>
+                                <input type="text" class="equipment-input" id="equip-union2-gloves" placeholder="예: 6억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">망토</span>
+                                <input type="text" class="equipment-input" id="equip-union2-cape" placeholder="예: 5억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">한벌옷</span>
+                                <input type="text" class="equipment-input" id="equip-union2-overall" placeholder="예: 15억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">방패</span>
+                                <input type="text" class="equipment-input" id="equip-union2-shield" placeholder="예: 5억">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 장신구 -->
+                    <div class="equipment-category">
+                        <div class="equipment-category-title category-accessory">💍 장신구</div>
+                        <div class="equipment-grid">
+                            <div class="equipment-item">
+                                <span class="equipment-label">얼굴장식</span>
+                                <input type="text" class="equipment-input" id="equip-union2-face" placeholder="예: 4억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">눈장식</span>
+                                <input type="text" class="equipment-input" id="equip-union2-eye" placeholder="예: 4억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">귀고리</span>
+                                <input type="text" class="equipment-input" id="equip-union2-earring" placeholder="예: 6억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">반지1</span>
+                                <input type="text" class="equipment-input" id="equip-union2-ring1" placeholder="예: 8억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">반지2</span>
+                                <input type="text" class="equipment-input" id="equip-union2-ring2" placeholder="예: 8억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">반지3</span>
+                                <input type="text" class="equipment-input" id="equip-union2-ring3" placeholder="예: 8억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">반지4</span>
+                                <input type="text" class="equipment-input" id="equip-union2-ring4" placeholder="예: 8억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">펜던트1</span>
+                                <input type="text" class="equipment-input" id="equip-union2-pendant1" placeholder="예: 10억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">펜던트2</span>
+                                <input type="text" class="equipment-input" id="equip-union2-pendant2" placeholder="예: 10억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">벨트</span>
+                                <input type="text" class="equipment-input" id="equip-union2-belt" placeholder="예: 7억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">어깨장식</span>
+                                <input type="text" class="equipment-input" id="equip-union2-shoulder" placeholder="예: 5억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">훈장</span>
+                                <input type="text" class="equipment-input" id="equip-union2-medal" placeholder="예: 3억">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 기타 -->
+                    <div class="equipment-category">
+                        <div class="equipment-category-title category-other">🔧 기타</div>
+                        <div class="equipment-grid">
+                            <div class="equipment-item">
+                                <span class="equipment-label">메카닉 장비</span>
+                                <input type="text" class="equipment-input" id="equip-union2-mechanic" placeholder="예: 5억">
+                            </div>
+                            <div class="equipment-item">
+                                <span class="equipment-label">드래곤장비</span>
+                                <input type="text" class="equipment-input" id="equip-union2-dragon" placeholder="예: 10억">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+
+                <!-- 회수율 요약 -->
+                <div class="recovery-summary">
+                    <h4 style="color: #D4AF37; margin-bottom: 15px;">💰 회수 가능 금액 분석 - <span id="currentTabName">본캐</span></h4>
+                    <div class="recovery-grid">
+                        <div class="recovery-item">
+                            <div class="recovery-label">무기 총액</div>
+                            <div class="recovery-value" id="weaponTotal">0억</div>
+                        </div>
+                        <div class="recovery-item">
+                            <div class="recovery-label">방어구 총액</div>
+                            <div class="recovery-value" id="armorTotal">0억</div>
+                        </div>
+                        <div class="recovery-item">
+                            <div class="recovery-label">장신구 총액</div>
+                            <div class="recovery-value" id="accessoryTotal">0억</div>
+                        </div>
+                        <div class="recovery-item">
+                            <div class="recovery-label">기타 총액</div>
+                            <div class="recovery-value" id="otherTotal">0억</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px; padding: 20px; background: var(--card-hover); border-radius: 10px; text-align: center;">
+                        <h4 style="color: #D4AF37; margin-bottom: 10px;">💎 최종 분석</h4>
+                        <div style="font-size: 1.2em; margin-bottom: 10px;">
+                            <span id="currentTabName2">본캐</span> 회수 가능 금액: <strong style="color: #D4AF37; font-size: 1.3em;" id="totalRecovery">0억</strong>
+                        </div>
+                        <div style="font-size: 1.1em; margin-bottom: 10px;">
+                            회수 후 예상 보유금: <strong style="color: #4CAF50; font-size: 1.2em;" id="expectedTotal">0억</strong>
+                        </div>
+                        <div style="font-size: 1em;">
+                            예상 현금 환전 금액: <strong style="color: #FF8C00;" id="expectedCash">₩0</strong>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; padding: 15px; background: rgba(34, 139, 34, 0.1); border-radius: 10px;">
+                        <h5 style="color: #228B22; margin-bottom: 10px;">📊 전체 캐릭터 총합</h5>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 0.95em;">
+                            <div>본캐: <strong id="mainTotal">0억</strong></div>
+                            <div>챔피언1: <strong id="union1Total">0억</strong></div>
+                            <div>챔피언2: <strong id="union2Total">0억</strong></div>
+                        </div>
+                        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(34, 139, 34, 0.3);">
+                            전체 총합: <strong style="color: #228B22; font-size: 1.2em;" id="allCharactersTotal">0억</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 설정 및 추가 기능 -->
+        <div class="card">
+            <h2 class="card-title">⚙️ 설정 및 추가 기능</h2>
+
+            <div>
+                <h3 style="margin-bottom: 15px; color: #228B22;">💱 메소/메포 시세</h3>
+                
+                <!-- 메소 시세 -->
+                <div class="setting-item">
+                    <span>1억 메소 = </span>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span>₩</span>
+                        <input type="number" id="mesoRate" placeholder="0" style="width: 100px;">
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <span>보유 메소 가치</span>
+                    <span id="mesoValue" style="font-weight: bold; color: #FF8C00;">₩0</span>
+                </div>
+                
+                <hr style="margin: 15px 0; border: none; border-top: 1px solid #eee;">
+                
+                <!-- 메포 시세 -->
+                <h4 style="margin-bottom: 10px; color: #4169E1;">💎 메소포인트</h4>
+                <div class="setting-item">
+                    <span>메소 구매 시세 (1억당)</span>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="number" id="mepoBuyRate" placeholder="0" style="width: 100px;">
+                        <span>메포</span>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <span>메소 판매 시세 (1억당)</span>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="number" id="mepoSellRate" placeholder="0" style="width: 100px;">
+                        <span>메포</span>
+                    </div>
+                </div>
+                
+                <div class="setting-item" style="background: #f0f8ff; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                        <span>보유 메포</span>
+                        <input type="number" id="currentMepo" placeholder="0" style="width: 100px;">
+                        <button onclick="updateMepoAnalysis(true)" style="padding: 5px 15px; background: #4169E1; color: white; border: none; border-radius: 5px; cursor: pointer;">확인</button>
+                    </div>
+                    <div id="mepoAnalysis" style="font-size: 0.9em; line-height: 1.6;">
+                        <!-- 메포 분석 결과 표시 -->
+                    </div>
+                </div>
+                <div style="margin-top: 15px;">
+                    <h3 style="margin-bottom: 10px; color: #228B22;">💾 데이터 관리</h3>
+                    <button id="exportDataBtn" style="width: 100%; margin-bottom: 10px;">📤 데이터 백업</button>
+                    <button id="importDataBtn" style="width: 100%; margin-bottom: 10px;">📥 데이터 복원</button>
+                    <input type="file" id="importFile" style="display: none;" accept=".json">
+                    <hr style="margin: 15px 0; border: none; border-top: 1px solid #eee;">
+                    <button id="clearAllDataBtn" onclick="clearAllData()" style="width: 100%; background: #DC143C;">🗑️ 전체 데이터 초기화</button>
+                    <button id="viewAllRecordsBtn" style="width: 100%; margin-top: 10px; background: #4169E1;">📊 전체 기록 보기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 플로팅 정보 -->
+    <div class="floating-info" id="floatingInfo"></div>
+
+    <!-- 오프라인 인디케이터 -->
+    <div class="offline-indicator">
+        📵 오프라인 모드
+    </div>
+
+    <!-- 버전 정보 -->
+    <div class="version-info">
+        쌀계부 v2.0 Modular
+    </div>
+
+    <!-- 목표 달성 모달 -->
+    <div id="goalModal" class="modal">
+        <div class="modal-content achievement-modal">
+            <div class="achievement-content">
+                <span class="close" style="color: white;">&times;</span>
+                <div style="font-size: 4em; margin: 20px 0;">🎉</div>
+                <h2 style="font-size: 2.5em; margin: 20px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">목표 달성!</h2>
+                <div id="goalAchievement" style="font-size: 1.3em; margin: 30px 0; line-height: 1.6;"></div>
+                <div style="font-size: 3em; margin: 20px 0;">🏆</div>
+                <p style="font-size: 1.1em; opacity: 0.9;">축하합니다! 목표를 달성했습니다!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 목표 완료 모달 -->
+    <div id="completeGoalModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 style="color: #228B22; text-align: center;">목표 완료</h2>
+            <p style="text-align: center; margin: 20px 0;">
+                해당 목표의 금액을 지출 내역에 추가하시겠습니까?
+            </p>
+            <div style="margin: 20px 0;">
+                <label style="display: block; margin-bottom: 10px;">지출 카테고리 선택:</label>
+                <select id="goalExpenseCategory" style="width: 100%; margin-bottom: 15px;">
+                    <option value="큐브">큐브</option>
+                    <option value="스타포스">스타포스</option>
+                    <option value="아이템 구매">아이템 구매</option>
+                    <option value="메포 교환">메포 교환</option>
+                    <option value="기타">기타</option>
+                </select>
+                <textarea id="goalExpenseMemo" placeholder="메모 (선택사항)" rows="3" style="width: 100%;"></textarea>
+            </div>
+            <div style="text-align: center; gap: 10px;">
+                <button class="confirm" style="margin-right: 10px;">예</button>
+                <button class="cancel" style="background: #666;">아니오</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript 모듈들 -->
+    <script src="src/utils/helpers.js"></script>
+    <script src="src/utils/formatters.js"></script>
+    <script src="src/utils/validators.js"></script>
+    <script src="src/core/storage.js"></script>
+    <script src="src/core/state.js"></script>
+    <script src="src/core/records.js"></script>
+    <script src="src/core/goals.js"></script>
+    <script src="src/features/charts.js"></script>
+    <script src="src/features/equipment.js"></script>
+    <script src="src/features/animations.js"></script>
+    <script src="src/features/csv-export.js"></script>
+    <script src="src/ui/themes.js"></script>
+    <script src="src/ui/components.js"></script>
+    <script src="src/ui/events.js"></script>
+    <script src="src/ui/notifications.js"></script>
+    <script src="main-complete.js"></script>
+    
+    <!-- 초기화 및 이벤트 연결 -->
+    <script>
+        // 페이지 로드 완료 시 초기화
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('페이지 로드 완료, 초기화 시작...');
+            
+            // 초기화 함수 호출
+            if (typeof init === 'function') {
+                init();
+            } else {
+                console.error('init 함수를 찾을 수 없습니다.');
+            }
+            
+            // 타입 변경 이벤트
+            const typeSelect = document.getElementById('type');
+            if (typeSelect) {
+                typeSelect.addEventListener('change', updateCategoryOptions);
+                // 초기 카테고리 설정
+                updateCategoryOptions();
+            }
+            
+            // 엔터키 이벤트
+            const amountInput = document.getElementById('amount');
+            if (amountInput) {
+                amountInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        addRecord();
+                    }
+                });
+            }
+            
+            // 차트 기간 탭 이벤트 - 이벤트 위임 방식
+            const chartTabs = document.querySelector('.chart-period-tabs');
+            if (chartTabs) {
+                chartTabs.addEventListener('click', function(e) {
+                    const tab = e.target.closest('.chart-period-tab');
+                    if (tab) {
+                        const view = tab.getAttribute('data-view');
+                        console.log('탭 클릭됨:', view);
+                        if (view) {
+                            // 직접 함수 호출
+                            if (window.switchView) {
+                                window.switchView(view);
+                            } else {
+                                console.error('switchView 함수를 찾을 수 없음');
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // 차트 탭 이벤트 제거 (일간/주간/월간/연간 탭과 연동됨)
+            
+            // 데이터 내보내기/가져오기
+            const exportBtn = document.getElementById('exportDataBtn');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', exportData);
+            }
+            
+            const importBtn = document.getElementById('importDataBtn');
+            const importFile = document.getElementById('importFile');
+            if (importBtn && importFile) {
+                importBtn.addEventListener('click', function() {
+                    importFile.click();
+                });
+                importFile.addEventListener('change', importData);
+            }
+            
+            // 다크모드 토글
+            const darkModeBtn = document.querySelector('.dark-mode-toggle');
+            if (darkModeBtn) {
+                darkModeBtn.addEventListener('click', toggleDarkMode);
+            }
+            
+            // 메소 시세 변경
+            const mesoRateInput = document.getElementById('mesoRate');
+            if (mesoRateInput) {
+                mesoRateInput.addEventListener('change', function() {
+                    updateMesoValue();
+                    saveAllData();
+                });
+                mesoRateInput.addEventListener('input', updateMesoValue);
+            }
+            
+            // 메포 관련 이벤트
+            const mepoBuyRate = document.getElementById('mepoBuyRate');
+            const mepoSellRate = document.getElementById('mepoSellRate');
+            const currentMepo = document.getElementById('currentMepo');
+            
+            if (mepoBuyRate) {
+                mepoBuyRate.addEventListener('change', function() {
+                    updateMepoAnalysis();
+                    saveAllData();
+                });
+                mepoBuyRate.addEventListener('input', function() {
+                    updateMepoAnalysis();
+                });
+            }
+            if (mepoSellRate) {
+                mepoSellRate.addEventListener('change', function() {
+                    updateMepoAnalysis();
+                    saveAllData();
+                });
+                mepoSellRate.addEventListener('input', function() {
+                    updateMepoAnalysis();
+                });
+            }
+            if (currentMepo) {
+                currentMepo.addEventListener('change', function() {
+                    updateMepoAnalysis();
+                    saveAllData();
+                });
+                currentMepo.addEventListener('input', function() {
+                    updateMepoAnalysis();
+                });
+            }
+            
+            // 장비 입력 이벤트
+            document.querySelectorAll('[id^="equip-"]').forEach(input => {
+                input.addEventListener('blur', updateEquipmentValue);
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        updateEquipmentValue();
+                    }
+                });
+            });
+            
+            // 장비 탭 이벤트
+            const equipmentTabs = document.querySelector('.equipment-tabs');
+            if (equipmentTabs) {
+                equipmentTabs.addEventListener('click', function(e) {
+                    const tab = e.target.closest('.equipment-tab');
+                    if (tab) {
+                        const tabName = tab.getAttribute('data-tab');
+                        switchEquipmentTab(tabName);
+                    }
+                });
+            }
+            
+            // 전체 초기화 버튼
+            const clearAllBtn = document.getElementById('clearAllDataBtn');
+            if (clearAllBtn) {
+                clearAllBtn.addEventListener('click', clearAllData);
+            }
+            
+            // 전체 기록 보기 버튼
+            const viewAllBtn = document.getElementById('viewAllRecordsBtn');
+            if (viewAllBtn) {
+                viewAllBtn.addEventListener('click', openAllRecordsPage);
+            }
+            
+            console.log('이벤트 연결 완료');
+            
+            // 애니메이션 초기화
+            if (window.initAnimations) {
+                console.log('애니메이션 초기화 중...');
+                window.initAnimations();
+            }
+        });
+    </script>
+</body>
+</html>

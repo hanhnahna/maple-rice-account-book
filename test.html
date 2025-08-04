@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>모듈 테스트</title>
+</head>
+<body>
+    <h1>모듈 로딩 테스트</h1>
+    <button onclick="testModules()">모듈 상태 확인</button>
+    <button onclick="testAddRecord()">레코드 추가 테스트</button>
+    <pre id="result"></pre>
+
+    <!-- JavaScript 모듈들 -->
+    <script src="src/utils/helpers.js"></script>
+    <script src="src/utils/formatters.js"></script>
+    <script src="src/utils/validators.js"></script>
+    <script src="src/core/storage.js"></script>
+    <script src="src/core/state.js"></script>
+    <script src="src/core/records.js"></script>
+    <script src="src/core/goals.js"></script>
+    <script src="src/features/charts.js"></script>
+    <script src="src/features/analytics.js"></script>
+    <script src="src/features/equipment.js"></script>
+    <script src="src/features/patterns.js"></script>
+    <script src="src/ui/themes.js"></script>
+    <script src="src/ui/components.js"></script>
+    <script src="src/ui/events.js"></script>
+    <script src="main.js"></script>
+
+    <script>
+        function testModules() {
+            const result = document.getElementById('result');
+            const modules = {
+                'MapleHelpers': window.MapleHelpers,
+                'MapleFormatters': window.MapleFormatters,
+                'MapleValidators': window.MapleValidators,
+                'MapleStorage': window.MapleStorage,
+                'MapleState': window.MapleState,
+                'MapleRecords': window.MapleRecords,
+                'MapleGoals': window.MapleGoals,
+                'MapleCharts': window.MapleCharts,
+                'MapleAnalytics': window.MapleAnalytics,
+                'MapleEquipment': window.MapleEquipment,
+                'MaplePatterns': window.MaplePatterns,
+                'MapleThemes': window.MapleThemes,
+                'MapleComponents': window.MapleComponents,
+                'MapleEvents': window.MapleEvents
+            };
+
+            let output = '모듈 로딩 상태:\n\n';
+            for (const [name, module] of Object.entries(modules)) {
+                const status = module ? '✅ 로드됨' : '❌ 로드 실패';
+                output += `${name}: ${status}\n`;
+                if (module) {
+                    const functions = Object.keys(module);
+                    output += `  - 함수들: ${functions.slice(0, 3).join(', ')}...\n`;
+                }
+            }
+
+            // 전역 함수들 확인
+            output += '\n전역 함수 상태:\n';
+            const globalFuncs = ['addRecord', 'deleteRecord', 'addGoal', 'refreshUI', 'updateMesoValue'];
+            globalFuncs.forEach(func => {
+                const status = typeof window[func] === 'function' ? '✅' : '❌';
+                output += `${func}: ${status}\n`;
+            });
+
+            result.textContent = output;
+        }
+
+        function testAddRecord() {
+            console.log('테스트: addRecord 함수 실행');
+            if (typeof addRecord === 'function') {
+                // 테스트 데이터 설정
+                document.body.insertAdjacentHTML('beforeend', `
+                    <input type="hidden" id="type" value="income">
+                    <input type="hidden" id="category" value="보스 결정석">
+                    <input type="hidden" id="amount" value="1000000">
+                    <input type="hidden" id="memo" value="테스트">
+                `);
+                
+                addRecord();
+            } else {
+                alert('addRecord 함수를 찾을 수 없습니다.');
+            }
+        }
+    </script>
+</body>
+</html>

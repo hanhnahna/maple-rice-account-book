@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>간단한 메이플 가계부</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .input-group { margin: 10px 0; }
+        button { padding: 10px 20px; background: #228B22; color: white; border: none; cursor: pointer; }
+        #records { margin-top: 20px; }
+        .record { padding: 10px; border: 1px solid #ddd; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍄 메이플 쌀먹 가계부 (간단 버전)</h1>
+        
+        <div class="input-group">
+            <select id="type">
+                <option value="income">수익</option>
+                <option value="expense">지출</option>
+            </select>
+            <input type="text" id="amount" placeholder="금액">
+            <button onclick="addSimpleRecord()">추가</button>
+        </div>
+
+        <div id="records"></div>
+        
+        <div style="margin-top: 20px;">
+            <button onclick="exportSimpleData()">데이터 내보내기</button>
+            <button onclick="clearAll()">모두 삭제</button>
+        </div>
+    </div>
+
+    <script>
+        // 로컬 스토리지 키
+        const STORAGE_KEY = 'mapleSsalMeokData';
+
+        // 페이지 로드 시 기록 표시
+        window.onload = function() {
+            displayRecords();
+        };
+
+        // 간단한 레코드 추가
+        function addSimpleRecord() {
+            const type = document.getElementById('type').value;
+            const amountText = document.getElementById('amount').value;
+            
+            if (!amountText) {
+                alert('금액을 입력하세요.');
+                return;
+            }
+
+            // 금액 파싱
+            let amount = 0;
+            if (amountText.includes('억')) {
+                amount = parseFloat(amountText.replace(/[^0-9.]/g, '')) * 100000000;
+            } else if (amountText.includes('만')) {
+                amount = parseFloat(amountText.replace(/[^0-9.]/g, '')) * 10000;
+            } else {
+                amount = parseInt(amountText.replace(/[^0-9]/g, '')) || 0;
+            }
+
+            if (amount <= 0) {
+                alert('올바른 금액을 입력하세요.');
+                return;
+            }
+
+            // 레코드 생성
+            const record = {
+                id: Date.now(),
+                type: type,
+                amount: amount,
+                date: new Date().toISOString()
+            };
+
+            // 기존 데이터 가져오기
+            const data = loadData();
+            data.records.push(record);
+            
+            // 저장
+            saveData(data);
+            
+            // UI 업데이트
+            document.getElementById('amount').value = '';
+            displayRecords();
+            
+            alert('기록이 추가되었습니다.');
+        }
+
+        // 데이터 로드
+        function loadData() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    return JSON.parse(saved);
+                }
+            } catch (e) {
+                console.error('데이터 로드 실패:', e);
+            }
+            return { records: [], goals: [], equipment: {}, settings: {} };
+        }
+
+        // 데이터 저장
+        function saveData(data) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch (e) {
+                console.error('데이터 저장 실패:', e);
+            }
+        }
+
+        // 레코드 표시
+        function displayRecords() {
+            const data = loadData();
+            const container = document.getElementById('records');
+            
+            if (data.records.length === 0) {
+                container.innerHTML = '<p>등록된 기록이 없습니다.</p>';
+                return;
+            }
+
+            // 최신순 정렬
+            const sorted = data.records.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            container.innerHTML = sorted.map(record => {
+                const date = new Date(record.date);
+                const dateStr = `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+                const typeText = record.type === 'income' ? '수익' : '지출';
+                const color = record.type === 'income' ? '#228B22' : '#DC143C';
+                const amount = formatAmount(record.amount);
+                
+                return `
+                    <div class="record" style="border-left: 4px solid ${color};">
+                        <strong>${dateStr}</strong> - 
+                        <span style="color: ${color}">${typeText}</span> - 
+                        <strong>${amount}</strong>
+                        <button onclick="deleteSimpleRecord(${record.id})" style="float: right; background: #DC143C;">삭제</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 금액 포맷
+        function formatAmount(amount) {
+            if (amount >= 100000000) {
+                return `${(amount / 100000000).toFixed(1)}억`;
+            } else if (amount >= 10000) {
+                return `${Math.floor(amount / 10000)}만`;
+            }
+            return amount.toLocaleString();
+        }
+
+        // 레코드 삭제
+        function deleteSimpleRecord(id) {
+            if (confirm('삭제하시겠습니까?')) {
+                const data = loadData();
+                data.records = data.records.filter(r => r.id !== id);
+                saveData(data);
+                displayRecords();
+            }
+        }
+
+        // 데이터 내보내기
+        function exportSimpleData() {
+            const data = loadData();
+            const exportData = {
+                ...data,
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `maple_backup_${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 모두 삭제
+        function clearAll() {
+            if (confirm('모든 데이터를 삭제하시겠습니까?')) {
+                localStorage.removeItem(STORAGE_KEY);
+                displayRecords();
+            }
+        }
+    </script>
+</body>
+</html>
